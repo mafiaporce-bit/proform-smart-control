@@ -137,25 +137,23 @@ export function Home() {
       </div>
 
       <button
-        className="relative mt-4 block w-full overflow-hidden rounded-[22px] border border-line text-left active:scale-[0.98] transition-transform"
-        onClick={() => go('virtual')}
-        aria-label="Open Virtual Running: Park Discovery 3K"
+        className="relative mt-4 block w-full overflow-hidden rounded-[22px] border border-cyan/25 text-left active:scale-[0.98] transition-transform"
+        onClick={() => go('workout')}
+        aria-label="Open the workout dashboard"
       >
-        <span className="block h-[150px] w-full bg-[radial-gradient(120%_90%_at_85%_10%,rgba(34,211,238,.35),transparent_60%),radial-gradient(90%_80%_at_10%_100%,rgba(52,211,153,.28),transparent_60%),linear-gradient(135deg,#0b1535,#07231f)]" />
-        <svg viewBox="0 0 400 150" className="absolute inset-0 h-full w-full" aria-hidden="true" preserveAspectRatio="none">
-          <path d="M-10 120 C 70 60, 120 140, 200 90 S 330 30, 410 70" fill="none" stroke="rgba(233,238,255,.22)" strokeWidth="10" strokeLinecap="round" />
-          <path d="M-10 120 C 70 60, 120 140, 200 90" fill="none" stroke="#22d3ee" strokeWidth="4" strokeLinecap="round" />
-          <circle cx="200" cy="90" r="7" fill="#e9eeff" stroke="#040714" strokeWidth="3" />
+        <span className="block h-[130px] w-full bg-[radial-gradient(100%_90%_at_90%_0%,rgba(34,211,238,.28),transparent_60%),linear-gradient(135deg,#0b1535,#050a1c)]" />
+        <svg viewBox="0 0 120 120" className="absolute right-3 top-3 h-[104px] w-[104px]" aria-hidden="true">
+          <path d="M23 92 A48 48 0 1 1 97 92" fill="none" stroke="rgba(233,238,255,.12)" strokeWidth="8" strokeLinecap="round" />
+          <path d="M23 92 A48 48 0 0 1 80 18" fill="none" stroke="#22d3ee" strokeWidth="8" strokeLinecap="round" />
+          <path d="M58 60 L83 30 L62 63 Z" fill="#e9eeff" />
+          <circle cx="60" cy="60" r="6" fill="#0b1636" stroke="#22d3ee" strokeWidth="2" />
         </svg>
         <span className="absolute inset-0 flex flex-col justify-between p-4">
-          <span className="pill self-start !border-transparent !bg-cyan/20 !text-cyan">NEW · VIRTUAL RUNNING</span>
-          <span>
-            <span className="block text-[20px] font-bold leading-tight tracking-tight">Park Discovery 3K</span>
-            <span className="block text-[13px] text-mute">3D park: lake, bridge, waterfall, hill, forest</span>
+          <span className="pill self-start !border-transparent !bg-cyan/20 !text-cyan">NEW · DASHBOARD</span>
+          <span className="pr-28">
+            <span className="block text-[20px] font-bold leading-tight tracking-tight">Speedometer + AI Coach</span>
+            <span className="block text-[13px] text-mute">Live speed, target pace and your coach</span>
           </span>
-        </span>
-        <span className="absolute bottom-4 right-4 grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-blue to-cyan text-[#03101f] shadow-[0_10px_26px_-8px_rgba(34,211,238,.8)]">
-          <Icon name="play" size={20} />
         </span>
       </button>
 

@@ -233,7 +233,7 @@ function SpeedCheckCard() {
               {t.speedKmh !== null ? t.speedKmh.toFixed(1) : '–'} <span className="text-[15px] font-normal text-mute">km/h</span>
             </div>
             <div className="mt-1 text-[12.5px] text-mute">
-              {t.speedKmh !== null ? 'Live. Virtual Running follows this.' : s.status === 'connected' ? (settings.telemetryLink ? 'Waiting for the treadmill to answer…' : 'Telemetry link is off, so nothing is read.') : 'Connect the treadmill to read it.'}
+              {t.speedKmh !== null ? 'Live. The workout dashboard follows this.' : s.status === 'connected' ? (settings.telemetryLink ? 'Waiting for the treadmill to answer…' : 'Telemetry link is off, so nothing is read.') : 'Connect the treadmill to read it.'}
             </div>
           </div>
           <Toggle

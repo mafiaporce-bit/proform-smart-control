@@ -5,7 +5,8 @@ import { PaceMatch } from './PaceMatch';
 import { duration } from '../lib/format';
 
 /** The guided plan in progress: current block, the speed to set on the console, time left, what comes next. */
-export function PlanPanel() {
+/** `pace={false}` hides the pace-match strip (the workout dashboard shows its own). */
+export function PlanPanel({ pace = true }: { pace?: boolean } = {}) {
   const w = useWorkout();
   if (!w.plan) return null;
   const sec = w.activeMs / 1000;
@@ -33,7 +34,7 @@ export function PlanPanel() {
         </div>
  
       )}
-      {!w.planDone && <PaceMatch target={seg.kmh} />}
+      {pace && !w.planDone && <PaceMatch target={seg.kmh} />}
       <div className="mt-3"><PlanChart plan={w.plan} atSec={sec} /></div>
     </Card>
   );

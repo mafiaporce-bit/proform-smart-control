@@ -10,15 +10,12 @@ export interface Settings {
   /** Highest speed any program will suggest. A comfort cap chosen by the user, not a treadmill limit. */
   planMaxKmh: number;
   cheer: boolean;
-  /** 3D park graphics quality. */
-  vrQuality: 'low' | 'medium' | 'high';
-  vrView: 'third' | 'first';
-  /** Nature sounds in the 3D park. */
-  vrSound: boolean;
   /** After the speed check: do the start-up handshake and read speed on every connection. Off = plain read-only. */
   telemetryLink: boolean;
   /** Coach voice: 'standard' = Kokoro/phone; 'charlie' = the ElevenLabs trainer (needs the Netlify function + key). */
   coachVoice: 'standard' | 'charlie';
+  /** Which coach picture the workout dashboard shows. Appearance only. */
+  coachAvatar: 'male' | 'female';
 }
 
 const KEY = 'psc.settings';
@@ -31,11 +28,9 @@ const defaults: Settings = {
   keepAwake: true,
   planMaxKmh: 10,
   cheer: true,
-  vrQuality: 'medium',
-  vrView: 'third',
-  vrSound: true,
   telemetryLink: false,
   coachVoice: 'standard',
+  coachAvatar: 'male',
 };
 
 function load(): Settings {

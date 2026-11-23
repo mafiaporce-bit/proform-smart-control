@@ -16,7 +16,7 @@ export const STATUS_GROUPS: Array<{ title: string; tone: string; items: string[]
       'Workout timer with distance and estimated calories from the speed you enter',
       'Six training programs and a custom builder, with spoken speed cues',
       'Coach: weekly plan, achievable goal, progress and tips (no AI service needed)',
-      'Virtual Running page: session timer, virtual pace, Walk / Jog / Run, pause, 3 km lap progress, checkpoints, guided programs with coach voice, saved to your history',
+      'Workout dashboard: speedometer with live speed and target, AI coach card (male or female picture), time, distance, calories and heart rate',
       'History with daily, weekly and monthly charts, streaks and CSV export',
       'Installable app that opens offline (everything except Bluetooth)',
       'Packet inspector and hex analyser',
@@ -28,7 +28,6 @@ export const STATUS_GROUPS: Array<{ title: string; tone: string; items: string[]
     items: [
       'Bluetooth connect to I_TL, service 1533 discovery, reading 1534 and 1535, notifications on 1535',
       'Disconnect detection, reconnect, saved diagnostic sessions and log export',
-      'Park Discovery 3K: the 3D park (leafy trees, pines, grass, flowing water, hills, sky), the Maya person and nature sounds. Drawn and checked in a software 3D renderer; not yet run on a phone, so smoothness on your Samsung is unmeasured',
       'Heart-rate strap over standard Bluetooth (listen-only)',
       'Kokoro voice (needs internet the first time to download the voice)',
       'Optional AI chat through a Netlify Function (needs a GitHub deploy and an API key)',
@@ -40,7 +39,7 @@ export const STATUS_GROUPS: Array<{ title: string; tone: string; items: string[]
     tone: 'text-warn',
     items: [
       'Keeping the link open: confirmed on this 105 CST on 22 Nov 2026 (start-up questions answered, unlock accepted, 47 of 47 read polls answered, link held 72 s). Runs only when you start it in the Bluetooth Lab, or as the telemetry link after the speed check',
-      'Reading speed and matching a plan: confirmed on this 105 CST on 23 Nov 2026. Virtual Running, distance and calories follow the real belt speed, and a guided plan shows a Speed up / On pace / Ease down cue so you match it on the console. The app only reads the speed',
+      'Reading speed and matching a plan: confirmed on this 105 CST on 23 Nov 2026. The speedometer, distance and calories follow the real belt speed, and a guided plan shows a Speed up / On pace / Ease down cue so you match it on the console. The app only reads the speed',
     ],
   },
   {

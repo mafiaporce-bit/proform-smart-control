@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { ClassicDashboard } from '../components/Dashboard';
+import { useTreadmillSpeed } from '../ble/telemetry';
+import { stopSpeaking } from '../lib/voice';
 import { Icon } from '../components/icons';
 import { Card, PageHeader, SafetyNote, Stat, StatusPill, go } from '../components/ui';
 import {
@@ -13,7 +16,7 @@ import {
   startWorkout,
   useWorkout,
 } from '../lib/workout';
-import { useSettings } from '../lib/settings';
+import { setSettings, useSettings } from '../lib/settings';
 import { duration, km, kmh } from '../lib/format';
 import { PlanPanel } from '../components/PlanPanel';
 import { connectHr, disconnectHr, useHr } from '../lib/hr';
@@ -21,35 +24,6 @@ import { useBle } from '../ble/useBle';
 import type { Workout } from '../db/db';
 
 const TARGETS = [null, 15, 20, 30, 45, 60];
-
-function Ring({ pct }: { pct: number }) {
-  const r = 54;
-  const c = 2 * Math.PI * r;
-  return (
-    <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" aria-hidden="true">
-      <defs>
-        <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#3b82ff" />
-          <stop offset=".6" stopColor="#22d3ee" />
-          <stop offset="1" stopColor="#8f7bff" />
-        </linearGradient>
-      </defs>
-      <circle cx="60" cy="60" r={r} fill="none" strokeWidth="5" className="ring-track" />
-      <circle
-        cx="60"
-        cy="60"
-        r={r}
-        fill="none"
-        stroke="url(#ring)"
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={c * (1 - Math.min(1, Math.max(0, pct)))}
-        style={{ transition: 'stroke-dashoffset 0.5s linear' }}
-      />
-    </svg>
-  );
-}
 
 function SpeedLogger() {
   const w = useWorkout();
@@ -146,14 +120,11 @@ function Summary({ w, onClose }: { w: Workout; onClose: () => void }) {
 export function WorkoutPage() {
   const w = useWorkout();
   const settings = useSettings();
-  const hr = useHr();
+  const live = useTreadmillSpeed() !== null;
   const [target, setTarget] = useState<number | null>(null);
   const [confirm, setConfirm] = useState<'finish' | 'discard' | null>(null);
   const [saved, setSaved] = useState<Workout | null>(null);
   const [tooShort, setTooShort] = useState(false);
-
-  const secs = w.activeMs / 1000;
-  const pct = w.targetMin ? secs / (w.targetMin * 60) : 0;
 
   if (w.status === 'idle') {
     return (
@@ -203,10 +174,7 @@ export function WorkoutPage() {
           >
             <Icon name="play" size={20} /> Start workout timer
           </button>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button className="btn" onClick={() => go('programs')}><Icon name="list" size={18} /> Programs</button>
-            <button className="btn" onClick={() => go('virtual')}><Icon name="walk" size={18} /> 3D Park</button>
-          </div>
+          <button className="btn w-full" onClick={() => go('programs')}><Icon name="list" size={18} /> Guided programs</button>
           <p className="px-1 text-center text-[12.5px] text-mute">
             Start the belt on the treadmill console yourself. This button starts the app's timer only. Calories use your weight ({settings.weightKg} kg, change it in Settings).
           </p>
@@ -217,38 +185,9 @@ export function WorkoutPage() {
 
   return (
     <>
-      <PageHeader title={w.status === 'paused' ? 'Paused' : 'Live workout'} sub={w.plan ? 'Following a guided plan' : 'Speed entered by you'} right={<StatusPill />} />
-
-      <div className="relative mx-auto aspect-square w-[78%] max-w-[300px]">
-        <Ring pct={w.targetMin ? pct : 1} />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="label">{w.targetMin ? `of ${w.targetMin} min` : 'Time'}</div>
-          <div className={`digits mt-1 text-[58px] font-extralight leading-none ${w.status === 'paused' ? 'text-warn' : ''}`}>{duration(secs)}</div>
-          <div className="mt-2 text-[13px] text-mute">
-            {w.targetMin ? (pct >= 1 ? 'Goal reached' : `${Math.round(pct * 100)}% done`) : w.status === 'paused' ? 'Timer on hold' : 'Free run'}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-2.5">
-        <Stat icon="route" label="km" value={km(w.distanceKm)} />
-        <Stat icon="flame" label="kcal" value={String(Math.round(w.kcal))} unit="est." tone="text-warn" />
-        <Stat icon="heart" label="bpm" value={hr.status === 'connected' && hr.bpm ? String(hr.bpm) : '– –'} tone="text-bad" />
-      </div>
-      {hr.status !== 'connected' && (
-        <p className="mt-1.5 px-1 text-[12px] text-dim">
-          No heart-rate strap connected.{' '}
-          <button className="min-h-9 font-semibold text-cyan underline underline-offset-4" onClick={() => void connectHr()}>Connect one</button>
-        </p>
-      )}
+      <ClassicDashboard />
 
       <div className="mt-4 space-y-4">
-        <button className="btn w-full" onClick={() => go('virtual')}>
-          <Icon name="walk" size={18} /> {w.virtual ? `Back to ${w.virtual}` : 'Watch in the 3D park'}
-        </button>
-        <PlanPanel />
-        <SpeedLogger />
-
         <div className="grid grid-cols-2 gap-2.5">
           {w.status === 'running' ? (
             <button className="btn !min-h-[60px]" onClick={pauseWorkout}><Icon name="pause" size={20} /> Pause timer</button>
@@ -257,7 +196,6 @@ export function WorkoutPage() {
           )}
           <button className="btn btn-violet !min-h-[60px]" onClick={() => setConfirm('finish')}><Icon name="stop" size={16} /> Finish</button>
         </div>
-
         {confirm && (
           <Card className="!border-violet/40">
             <div className="font-semibold">{confirm === 'finish' ? 'Finish and save this workout?' : 'Throw this workout away?'}</div>
@@ -284,6 +222,17 @@ export function WorkoutPage() {
             </div>
           </Card>
         )}
+
+        <button
+          className={`btn w-full ${settings.voiceOn ? '!border-cyan/60 text-cyan' : 'text-mute'}`}
+          aria-pressed={settings.voiceOn}
+          onClick={() => { setSettings({ voiceOn: !settings.voiceOn }); if (settings.voiceOn) stopSpeaking(); }}
+        >
+          <Icon name={settings.voiceOn ? 'volume' : 'mute'} size={18} /> Coach voice {settings.voiceOn ? 'on' : 'off'}
+        </button>
+
+        <PlanPanel pace={false} />
+        {!live && <SpeedLogger />}
 
         <Card>
           <div className="flex items-center gap-3">

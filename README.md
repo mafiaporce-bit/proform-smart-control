@@ -23,11 +23,11 @@ Unofficial phone app for the ProForm 105 CST treadmill. Not made by or connected
 
 | Status | Feature |
 |---|---|
-| Working | Virtual Running: Park Discovery 3K, a 3D 3 km route with photo textures (Poly Haven, CC0) and a lakeside showcase in the first 210 m, with the Maya 3D person (walk, jog, run), two cameras, checkpoints, graphics quality levels, fullscreen, nature sounds, guided programs with coach voice in the park, Simulation Mode, saved to History; workout timer, distance and estimated calories from the speed you enter; six guided programs plus a custom builder with spoken cues; coach with weekly plan, goal and tips; history with day, week and month charts, streaks and CSV export; installable, opens offline; packet inspector and hex analyser |
-| Built, not tested on real hardware | 3D park speed on a phone (drawn and checked here with a software renderer only); treadmill link (connect to I_TL, service 1533, read 1534/1535, notifications on 1535, disconnect detection, reconnect, saved sessions, log export); heart-rate strap; Kokoro voice; optional AI chat function |
+| Working | Workout dashboard: speedometer (animated needle, digital speed, target marker), AI coach card with male or female picture and the coach's last line, pace banner (below / on / above target, only with a live treadmill reading), time, distance, calories, heart rate, portrait and landscape; workout timer, distance and estimated calories from the speed you enter; six guided programs plus a custom builder with spoken cues; coach with weekly plan, goal and tips; history with day, week and month charts, streaks and CSV export; installable, opens offline; packet inspector and hex analyser |
+| Built, not tested on real hardware | treadmill link (connect to I_TL, service 1533, read 1534/1535, notifications on 1535, disconnect detection, reconnect, saved sessions, log export); heart-rate strap; Kokoro voice; optional AI chat function |
 | Confirmed on the 105 CST (22 Nov 2026) | Keeping the Bluetooth link open: six start-up questions answered, unlock accepted, 47 of 47 read-only polls answered with matching checksums, link held 72 s (it drops at about 17 s when the app stays silent) |
 | Working | Pace match: while a guided plan runs, the screen shows the block's target speed and your real belt speed with a cue — "Speed up to X", "On pace", "Ease down to X" — so you match the plan on the console. The app only reads the speed |
-| Confirmed on the 105 CST (23 Nov 2026) | Speed check and telemetry link: console 2, 3, 4 km/h = 200, 300, 400 at position 0 of the poll reply; link ran 169 s, 242 of 242 replies valid; Virtual Running, distance and calories follow the reported speed |
+| Confirmed on the 105 CST (23 Nov 2026) | Speed check and telemetry link: console 2, 3, 4 km/h = 200, 300, 400 at position 0 of the poll reply; link ran 169 s, 242 of 242 replies valid; the speedometer, distance and calories follow the reported speed |
 | Not supported | Starting or stopping the belt from the phone (by design: console and safety key only); program or coach speed control (planned after the control test is proven); motorised incline; firmware update; iPhone/Firefox/Samsung Internet for Bluetooth |
 
 **Read-only by default.** Ordinary use sends nothing to the treadmill. The only write path is `sendIfit()` in `src/ble/manager.ts`, used by the experimental test after the user allows it for one connection. Every message goes through `assertSafeRequest()` in `src/ble/ifit.ts`, which lets through start-up questions, the unlock message, pure reads, and one write: a plain set-speed message for the exact value the control test has just checked, inside hard limits of 1.0 to 16.0 km/h. Incline, start, stop and any other write are refused. `node tools/test-ifit.mjs` checks the codec and the guard against the published reference packets. The firmware update service is never requested. Protocol findings are in `docs/PROTOCOL.md`.
@@ -55,11 +55,10 @@ The build uses esbuild for the React + TypeScript bundle and Tailwind CSS 4 for 
 
 - `src/ble/` treadmill Bluetooth manager (read-only), UUIDs, byte formatting, frame labels
 - `src/db/` IndexedDB storage (workouts, Bluetooth sessions)
-- `src/lib/` workout tracker, programs, coach rules, heart rate, calorie estimate, voice, park sounds (`ambience.ts`), settings
-- `src/pages/` screens (`VirtualRun.tsx` = Virtual Running)
-- `public/virtual-park/` Park Discovery 3K: the 3D scene (`app.js`), its plants, textures, sky and hills (`scenery.js`), the message bridge to the app (`bridge.js`), the bundled 3D engine (`vendor/`) and the 3D person (`assets/maya-locomotion.glb`)
-- `src/components/WalkScene.tsx` and `public/virtual/park/`: the older photo Park Walk, shown only if 3D cannot start
-- `docs/VIRTUAL-RUNNING.md` how the 3D park works, what was measured, licences
+- `src/lib/` workout tracker, programs, coach rules, heart rate, calorie estimate, voice, settings, the coach caption (`coachline.ts`)
+- `src/pages/` screens (`Workout.tsx` = the workout dashboard)
+- `src/components/Dashboard.tsx` speedometer, coach card, pace banner and stats
+- `public/coach/` the male and female coach pictures
 - `netlify/functions/` optional AI chat
 - `docs/PROTOCOL.md` protocol research notes
 - `public/` manifest, icons, service worker

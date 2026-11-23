@@ -84,7 +84,7 @@ fs.writeFileSync(path.join(out, 'index.html'), html);
 // 5. Service worker with the list of files to keep for offline use
 const files = walk(out)
   .map((f) => '/' + path.relative(out, f).split(path.sep).join('/'))
-  .filter((f) => !f.startsWith('/_') && f !== '/sw.js' && !f.endsWith('.glb')) // the 3D person is cached on first use instead
+  .filter((f) => !f.startsWith('/_') && f !== '/sw.js')
   .map((f) => (f !== '/index.html' && f.endsWith('/index.html') ? f.slice(0, -'index.html'.length) : f)); // sub-pages by folder URL
 // The version changes whenever any shipped file changes (names AND contents), so phones pick up every update.
 const contentSum = crypto.createHash('sha256');

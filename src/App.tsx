@@ -12,7 +12,6 @@ import { Programs } from './pages/Programs';
 import { Coach } from './pages/Coach';
 import { Diagnostics } from './pages/Diagnostics';
 import { SettingsPage } from './pages/Settings';
-import { VirtualRun } from './pages/VirtualRun';
 
 const routes: Record<string, () => React.JSX.Element | null> = {
   home: Home,
@@ -24,7 +23,8 @@ const routes: Record<string, () => React.JSX.Element | null> = {
   coach: Coach,
   diagnostics: Diagnostics,
   settings: SettingsPage,
-  virtual: VirtualRun,
+  // Old bookmark to the removed 3D park opens the workout dashboard instead.
+  virtual: WorkoutPage,
 };
 
 const tabs = [
@@ -34,7 +34,7 @@ const tabs = [
   { route: 'history', label: 'History', icon: 'chart' },
   { route: 'more', label: 'More', icon: 'more' },
 ];
-const tabOf: Record<string, string> = { programs: 'more', coach: 'more', diagnostics: 'more', settings: 'more', virtual: 'home' };
+const tabOf: Record<string, string> = { programs: 'more', coach: 'more', diagnostics: 'more', settings: 'more', virtual: 'workout' };
 
 const readRoute = () => {
   const r = window.location.hash.replace(/^#\/?/, '');
@@ -59,7 +59,7 @@ export function App() {
   const active = tabOf[route] ?? route;
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-[480px]">
+    <div className={`mx-auto min-h-dvh w-full max-w-[480px] ${route === 'workout' ? 'landscape:max-w-[1100px]' : ''}`}>
       <main
         key={route}
         className="page px-4"

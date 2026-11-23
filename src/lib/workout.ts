@@ -10,7 +10,8 @@ import { currentBpm } from './hr';
 import { planTotalSec, type Plan, type PlanSegment } from './programs';
 import { getSettings } from './settings';
 import { speak } from './voice';
-import { coachSay, pushLine } from './coachvoice';
+import { COACH_LINES, coachSay, pushLine } from './coachvoice';
+import { clearCoachLine, showCoachLine } from './coachline';
 
 export interface WorkoutState {
   status: 'idle' | 'running' | 'paused';
@@ -238,7 +239,11 @@ function advance(dt: number) {
   }
 
   set({ activeMs, distanceKm, kcal, speedKmh, segIndex, planDone, maxKmh, samples, measuredMs, said, ...hr });
-  if (cue) { if (cueKey && getSettings().coachVoice === 'charlie') void coachSay(cueKey); else void speak(cue); }
+  if (cue) {
+    const charlie = Boolean(cueKey) && getSettings().coachVoice === 'charlie';
+    showCoachLine(charlie ? COACH_LINES[cueKey as string] ?? cue : cue);
+    if (charlie) void coachSay(cueKey as string); else void speak(cue);
+  }
 }
 
 function tick() {
@@ -277,13 +282,18 @@ export function startWorkout(opts: { targetMin?: number | null; plan?: Plan | nu
   );
   runTimer(true);
   void holdScreen(true);
-  if (getSettings().coachVoice === 'charlie') { void speak('Clip on your safety key.', true); void coachSay('start'); } else void speak(
-    plan
-      ? `Starting ${plan.name}. Clip on your safety key. ${segmentCue(plan.segments[0])}`
-      : opts.virtual
-        ? `Starting ${opts.virtual}. Clip on your safety key and start the belt on the console.`
-        : 'Workout started. Clip on your safety key.',
-  );
+  const startLine = plan
+    ? `Starting ${plan.name}. Clip on your safety key. ${segmentCue(plan.segments[0])}`
+    : opts.virtual
+      ? `Starting ${opts.virtual}. Clip on your safety key and start the belt on the console.`
+      : 'Workout started. Clip on your safety key.';
+  if (getSettings().coachVoice === 'charlie') {
+    showCoachLine(COACH_LINES.start);
+    void speak('Clip on your safety key.', true); void coachSay('start');
+  } else {
+    showCoachLine(startLine);
+    void speak(startLine);
+  }
 }
 
 export function pauseWorkout() {
@@ -325,6 +335,7 @@ export function setLoggedIncline(pct: number) {
 const reset = () => {
   const { speedKmh, inclinePct } = state;
   state = { ...fresh(), speedKmh, inclinePct };
+  clearCoachLine();
   persist(true);
   emit();
 };
