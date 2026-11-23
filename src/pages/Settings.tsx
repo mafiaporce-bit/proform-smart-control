@@ -3,6 +3,7 @@ import { Icon } from '../components/icons';
 import { Card, Footer, PageHeader, Toggle } from '../components/ui';
 import { setSettings, useSettings } from '../lib/settings';
 import { coachSay, coachVoiceAvailable, resetCoachVoiceProbe } from '../lib/coachvoice';
+import { DASH_STYLES, StylePicker } from '../components/Dashboard';
 import { KOKORO_VOICES, kokoroFailReason, loadKokoro, speak, stopSpeaking, useKokoroStatus } from '../lib/voice';
 import { isInstalled, promptInstall, useCanInstall } from '../lib/install';
 import { clearWorkouts, listWorkouts } from '../db/db';
@@ -124,6 +125,25 @@ export function SettingsPage() {
                 {kokoro === 'loading' ? 'Loading…' : 'Load now'}
               </button>
             )}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="label">Workout dashboard</div>
+          <p className="mt-1 text-[13px] text-mute">Style: {DASH_STYLES.find((x) => x.id === s.dashStyle)?.long}. You can also switch it on the workout screen.</p>
+          <StylePicker className="mt-2" />
+          <div className="mt-3 text-[13px] text-mute">Coach picture</div>
+          <div className="mt-1.5 grid grid-cols-2 gap-2">
+            {(['male', 'female'] as const).map((g) => (
+              <button
+                key={g}
+                className={`btn btn-sm ${s.coachAvatar === g ? '!border-cyan !bg-cyan/15 text-cyan' : ''}`}
+                aria-pressed={s.coachAvatar === g}
+                onClick={() => setSettings({ coachAvatar: g })}
+              >
+                {g === 'male' ? 'Male coach' : 'Female coach'}
+              </button>
+            ))}
           </div>
         </Card>
 

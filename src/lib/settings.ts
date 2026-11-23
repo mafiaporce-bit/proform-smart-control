@@ -16,6 +16,8 @@ export interface Settings {
   coachVoice: 'standard' | 'charlie';
   /** Which coach picture the workout dashboard shows. Appearance only. */
   coachAvatar: 'male' | 'female';
+  /** Workout dashboard look: 1 Classic Speedometer, 2 Digital Odometer, 3 Smart Coaching. Appearance only. */
+  dashStyle: 'classic' | 'odometer' | 'smart';
 }
 
 const KEY = 'psc.settings';
@@ -31,6 +33,7 @@ const defaults: Settings = {
   telemetryLink: false,
   coachVoice: 'standard',
   coachAvatar: 'male',
+  dashStyle: 'classic',
 };
 
 function load(): Settings {

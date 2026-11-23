@@ -34,7 +34,7 @@ export function useDash() {
   const seg = w.plan && !w.planDone ? w.plan.segments[w.segIndex] : null;
   const target = seg ? seg.kmh : null;
   const pace: Pace = live && target !== null ? (Math.abs(speed - target) <= TOL ? 'on' : speed < target ? 'below' : 'above') : null;
-  const source = live ? 'Live from treadmill' : w.plan ? 'Plan speed · not measured' : 'Entered by you';
+  const source = live ? 'Live from treadmill' : w.plan ? 'Not measured' : 'Entered by you';
   const noLiveHint = !cal
     ? 'Do the one-time speed check in the Bluetooth Lab to get a live reading.'
     : ble.status === 'connected'
@@ -370,5 +370,199 @@ export function ClassicDashboard() {
         <div className="landscape:hidden"><StatsPanel d={d} /></div>
       </div>
     </section>
+  );
+}
+
+// ---- Style picker -------------------------------------------------------
+export const DASH_STYLES = [
+  { id: 'classic', label: 'Classic', long: 'Classic Speedometer' },
+  { id: 'odometer', label: 'Odometer', long: 'Digital Odometer' },
+  { id: 'smart', label: 'Smart', long: 'Smart Coaching' },
+] as const;
+
+export function StylePicker({ className = '' }: { className?: string }) {
+  const s = useSettings();
+  return (
+    <div className={`grid grid-cols-3 gap-1.5 ${className}`} role="group" aria-label="Dashboard style">
+      {DASH_STYLES.map((x) => {
+        const on = s.dashStyle === x.id;
+        return (
+          <button
+            key={x.id}
+            className={`min-h-9 rounded-full border px-2 text-[12.5px] font-semibold transition-colors ${on ? 'border-cyan bg-cyan/15 text-cyan' : 'border-line bg-white/[0.04] text-mute'}`}
+            aria-pressed={on}
+            title={x.long}
+            onClick={() => setSettings({ dashStyle: x.id })}
+          >
+            {x.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---- Style 2: Digital Odometer -------------------------------------------
+function FlipNumber({ value }: { value: number }) {
+  const chars = value.toFixed(1).split('');
+  return (
+    <div className="flex items-stretch justify-center gap-[1.5cqw]" aria-hidden="true">
+      {chars.map((ch, i) =>
+        ch === '.' ? (
+          <span key={`dot${i}`} className="self-end pb-[3cqw] text-[9cqw] font-bold leading-none text-text">.</span>
+        ) : (
+          <span key={`${i}-${ch}`} className="flip-tile h-[30cqw] w-[20cqw]">
+            <span className="digits text-[24cqw] font-bold leading-none">{ch}</span>
+          </span>
+        ),
+      )}
+    </div>
+  );
+}
+
+function OdometerDial({ d }: { d: ReturnType<typeof useDash> }) {
+  const max = scaleMax(d.speed, d.target);
+  const f = Math.max(0, Math.min(1, d.speed / max));
+  const a0 = 200, sweep = 140; // a shallow arc over the digits
+  const ticks = Array.from({ length: 29 }, (_, i) => i / 28);
+  return (
+    <div className="gauge-box relative !max-w-[420px]" role="img" aria-label={`Speed ${d.speed.toFixed(1)} kilometres per hour. ${d.source}.`}>
+      <svg viewBox="0 0 300 130" className="block h-auto w-full" aria-hidden="true">
+        <g transform="translate(0 -18)">
+          <path d={arc(a0, a0 + sweep, 136)} fill="none" stroke="rgb(34 211 238 / .18)" strokeWidth="2" />
+          {ticks.map((t, i) => {
+            const major = i % 4 === 0;
+            const a = a0 + sweep * t;
+            const [x0, y0] = pt(a, 128);
+            const [x1, y1] = pt(a, major ? 114 : 121);
+            return <line key={i} x1={x0} y1={y0} x2={x1} y2={y1} stroke={t <= f ? '#22d3ee' : 'rgb(233 238 255 / .22)'} strokeWidth={major ? 2.4 : 1.3} strokeLinecap="round" style={{ transition: 'stroke .5s' }} />;
+          })}
+        </g>
+      </svg>
+      <div className="-mt-[16cqw] flex flex-col items-center">
+        <FlipNumber value={d.speed} />
+        <span className="mt-[1.5cqw] text-[4.4cqw] text-mute">km/h</span>
+        <span className={`mt-[1.2cqw] inline-flex items-center gap-1.5 rounded-full border px-[2.6cqw] py-[0.8cqw] text-[3.4cqw] font-semibold ${d.live ? 'border-good/40 bg-good/10 text-good' : 'border-line bg-white/[0.04] text-mute'}`}>
+          <span className={`dot ${d.live ? 'dot-live' : ''}`} /> {d.source}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function TargetTile({ d }: { d: ReturnType<typeof useDash> }) {
+  return (
+    <div className="neon flex items-center gap-3 p-3">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-cyan/60 text-cyan">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /></svg>
+      </span>
+      <div>
+        <div className="text-[12px] text-mute">Target speed</div>
+        <div className="digits text-[24px] font-bold leading-tight">{d.target !== null ? d.target.toFixed(1) : '—'} <span className="text-[12px] font-medium text-mute">{d.target !== null ? 'km/h' : 'free run'}</span></div>
+      </div>
+    </div>
+  );
+}
+
+function PaceToTarget({ d }: { d: ReturnType<typeof useDash> }) {
+  if (d.target === null || !d.live) return null;
+  const pct = Math.round((d.speed / d.target) * 100);
+  const w = Math.max(0, Math.min(100, pct));
+  const tone = d.pace === 'on' ? 'from-good to-cyan' : d.pace === 'above' ? 'from-cyan to-warn' : 'from-blue to-cyan';
+  return (
+    <div className="neon flex items-center gap-3 px-3 py-3" aria-label={`Pace to target ${pct} percent`}>
+      <span className="shrink-0 text-[13px] font-semibold">Pace to target</span>
+      <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
+        <div className={`h-full rounded-full bg-gradient-to-r ${tone} shadow-[0_0_14px_rgb(34_211_238/.7)]`} style={{ width: `${w}%`, transition: 'width .6s ease-out' }} />
+      </div>
+      <div className="shrink-0 text-right">
+        <div className="digits text-[18px] font-bold leading-none">{pct}%</div>
+        <div className="text-[11px] text-mute">{d.speed.toFixed(1)} / {d.target.toFixed(1)}</div>
+      </div>
+    </div>
+  );
+}
+
+export function OdometerDashboard() {
+  const d = useDash();
+  return (
+    <section className="dash" aria-label="Workout dashboard">
+      <DashHeader d={d} />
+      <div className="space-y-3">
+        <CoachCard d={d} layout="banner" />
+        <div className="grid gap-3 landscape:grid-cols-[0.9fr_1.4fr_1fr] landscape:items-center">
+          <div className="hidden landscape:block"><StatsPanel d={d} cols={1} /></div>
+          <OdometerDial d={d} />
+          <div className="grid grid-cols-1 gap-3">
+            <PaceBanner d={d} />
+            <TargetTile d={d} />
+          </div>
+        </div>
+        <PaceToTarget d={d} />
+        <div className="landscape:hidden"><StatsPanel d={d} /></div>
+      </div>
+    </section>
+  );
+}
+
+// ---- Style 3: Smart Coaching ----------------------------------------------
+function Comparison({ d }: { d: ReturnType<typeof useDash> }) {
+  const chip =
+    d.target === null
+      ? { cls: 'border-line bg-white/[0.04] text-mute', title: 'Free run', sub: 'No target' }
+      : d.pace === 'on'
+        ? { cls: 'neon-good text-good', title: 'On target ✓', sub: 'Hold it' }
+        : d.pace === 'below'
+          ? { cls: 'neon-bad text-bad', title: 'Below target', sub: 'Speed up' }
+          : d.pace === 'above'
+            ? { cls: 'neon-warn text-warn', title: 'Above target', sub: 'Slightly fast' }
+            : { cls: 'border-line bg-white/[0.04] text-mute', title: 'Not live', sub: 'Set it on the console' };
+  return (
+    <div className="neon flex items-center gap-3 p-3" role="status">
+      <div className="text-center">
+        <div className="text-[12px] text-mute">Current</div>
+        <div className="digits text-[30px] font-bold leading-none">{d.speed.toFixed(1)}</div>
+        <div className="text-[11px] text-mute">km/h</div>
+      </div>
+      <span className="h-12 w-px bg-line" />
+      <div className="text-center">
+        <div className="text-[12px] text-mute">Target</div>
+        <div className="digits text-[30px] font-bold leading-none">{d.target !== null ? d.target.toFixed(1) : '—'}</div>
+        <div className="text-[11px] text-mute">km/h</div>
+      </div>
+      <div className={`ml-auto min-w-0 rounded-2xl border px-3 py-2 ${chip.cls}`}>
+        <div className="text-[14px] font-bold italic">{chip.title}</div>
+        <div className="text-[11.5px] text-mute">{chip.sub}</div>
+      </div>
+    </div>
+  );
+}
+
+export function SmartDashboard() {
+  const d = useDash();
+  return (
+    <section className="dash" aria-label="Workout dashboard">
+      <DashHeader d={d} />
+      <div className="grid gap-3 landscape:grid-cols-[0.8fr_1.25fr_1.1fr] landscape:items-start">
+        <div className="hidden landscape:block"><StatsPanel d={d} cols={1} /></div>
+        <div className="space-y-3">
+          <CoachCard d={d} />
+          <Comparison d={d} />
+        </div>
+        <Speedometer speed={d.speed} target={d.target} source={d.source} live={d.live} />
+        <div className="landscape:hidden"><StatsPanel d={d} /></div>
+      </div>
+    </section>
+  );
+}
+
+/** The saved dashboard style. */
+export function WorkoutDashboard() {
+  const s = useSettings();
+  return (
+    <>
+      {s.dashStyle === 'odometer' ? <OdometerDashboard /> : s.dashStyle === 'smart' ? <SmartDashboard /> : <ClassicDashboard />}
+      <StylePicker className="mt-3" />
+    </>
   );
 }

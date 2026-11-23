@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClassicDashboard } from '../components/Dashboard';
+import { WorkoutDashboard } from '../components/Dashboard';
 import { useTreadmillSpeed } from '../ble/telemetry';
 import { stopSpeaking } from '../lib/voice';
 import { Icon } from '../components/icons';
@@ -185,7 +185,7 @@ export function WorkoutPage() {
 
   return (
     <>
-      <ClassicDashboard />
+      <WorkoutDashboard />
 
       <div className="mt-4 space-y-4">
         <div className="grid grid-cols-2 gap-2.5">

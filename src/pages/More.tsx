@@ -16,7 +16,7 @@ export const STATUS_GROUPS: Array<{ title: string; tone: string; items: string[]
       'Workout timer with distance and estimated calories from the speed you enter',
       'Six training programs and a custom builder, with spoken speed cues',
       'Coach: weekly plan, achievable goal, progress and tips (no AI service needed)',
-      'Workout dashboard: speedometer with live speed and target, AI coach card (male or female picture), time, distance, calories and heart rate',
+      'Workout dashboard in three styles (Classic Speedometer, Digital Odometer, Smart Coaching): live speed and target, AI coach card (male or female picture), time, distance, calories and heart rate',
       'History with daily, weekly and monthly charts, streaks and CSV export',
       'Installable app that opens offline (everything except Bluetooth)',
       'Packet inspector and hex analyser',

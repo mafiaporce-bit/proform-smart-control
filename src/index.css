@@ -142,6 +142,15 @@
   .neon-good { border-color: rgb(52 211 153 / 0.55); box-shadow: 0 0 24px -8px rgb(52 211 153 / 0.7); background: linear-gradient(180deg, rgb(10 48 38 / 0.7), rgb(5 20 18 / 0.75)); }
   .neon-warn { border-color: rgb(251 191 36 / 0.55); box-shadow: 0 0 24px -8px rgb(251 191 36 / 0.6); background: linear-gradient(180deg, rgb(48 36 8 / 0.7), rgb(20 14 4 / 0.75)); }
   .neon-bad { border-color: rgb(251 113 133 / 0.6); box-shadow: 0 0 24px -8px rgb(251 113 133 / 0.65); background: linear-gradient(180deg, rgb(56 14 26 / 0.72), rgb(22 6 12 / 0.75)); }
+  .flip-tile {
+    position: relative; display: grid; place-items: center;
+    border-radius: 14px; color: #f2f6ff;
+    background: linear-gradient(180deg, #2a3350 0%, #161d33 49%, #0b1022 51%, #121a30 100%);
+    border: 1px solid rgb(140 160 255 / 0.25);
+    box-shadow: 0 10px 24px -10px rgb(0 0 0 / .8), 0 0 0 1px rgb(0 0 0 / .4) inset;
+  }
+  .flip-tile::after { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 2px; background: rgb(0 0 0 / .55); }
+  .flip-tile > span { animation: flipin .35s cubic-bezier(.2,.8,.3,1); }
   .gauge-box { width: 100%; max-width: 360px; margin-inline: auto; container-type: inline-size; }
   .gauge-read .gr-label { font-size: 3.4cqw; }
   .gauge-read .gr-num { font-size: 15.5cqw; }
@@ -156,6 +165,7 @@
   70% { box-shadow: 0 0 0 9px rgb(52 211 153 / 0); }
   100% { box-shadow: 0 0 0 0 rgb(52 211 153 / 0); }
 }
+@keyframes flipin { from { transform: perspective(300px) rotateX(-85deg); opacity: .2; } to { transform: none; opacity: 1; } }
 @keyframes blink { 50% { opacity: 0.35; } }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes belt { to { stroke-dashoffset: -64; } }
