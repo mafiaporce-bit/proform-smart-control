@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#040714"><meta name="description" content="Park Discovery 3K: a continuous 3 km 3D park route for ProForm Smart Control">
+<title>Park Discovery 3K</title>
+<link rel="stylesheet" href="styles.css">
+<!-- The 3D engine (Three.js 0.172, MIT licence) is bundled in ./vendor, so nothing is fetched from other sites. -->
+<script type="importmap">
+{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}
+</script>
+<script>
+  // Shown inside ProForm Smart Control: the host app draws all controls, this page draws only the park.
+  if (window.parent !== window) document.documentElement.classList.add('embed');
+  window.__parkFail = function (reason) {
+    if (window.__parkReady || window.__parkFailed) return;
+    window.__parkFailed = true;
+    var f = document.getElementById('fatal'); if (f) { f.hidden = false; document.getElementById('fatalReason').textContent = reason; }
+    try { if (window.parent !== window) window.parent.postMessage({ source: 'proform-park', type: 'VR_ERROR', message: reason }, location.origin); } catch (e) {}
+  };
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="scene" aria-label="Interactive 3D virtual park trail"></div>
+  <div class="vignette"></div>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">↗</span><div><strong>PARK<span>DISCOVERY</span></strong><small>PROFORM SMART CONTROL · 3 KM ROUTE</small></div></div>
+    <div class="topright"><span class="pill demo" id="sourcePill">● SIMULATION MODE</span><button class="iconbtn" id="expandBtn" aria-label="Fullscreen">⛶</button></div>
+  </header>
+  <section class="route-title"><span class="eyebrow">INTERACTIVE 3D JOURNEY</span><h1>Park Discovery <em>3K</em></h1><p id="landmark">Lakeside Promenade · Start</p></section>
+  <div id="loading" class="loading"><div class="loader"></div><strong id="loadTitle">Growing your park…</strong><span id="loadDesc">Preparing the 3 km trail and runner</span></div>
+  <aside class="stats"><div><span class="stats-label">ELAPSED</span><b id="time">00:00</b></div><div><span class="stats-label">DISTANCE</span><b id="distance">0.00 <small>km</small></b></div><div><span class="stats-label">PACE</span><b id="speed">5.0 <small>km/h</small></b></div><div class="calorie"><span class="stats-label">EST. ENERGY</span><b id="calories">0 <small>kcal</small></b></div></aside>
+  <aside class="minimap"><div class="mini-top"><span>ROUTE MAP</span><b id="routePercent">0%</b></div><canvas id="mapCanvas" width="230" height="146"></canvas><div class="mini-progress"><div id="progressFill"></div></div><p>3.0 km scenic loop</p></aside>
+  <section class="tour"><div class="tour-heading"><span>EXPLORE THE TRAIL</span><small>Jump ahead to preview</small></div><div class="tour-scroll" id="checkpoints"><button class="checkpoint active" data-spot="0">🌿 <span>Lakeside</span><small>0.0 km</small></button><button class="checkpoint" data-spot="0.20">🌉 <span>Wooden Bridge</span><small>0.6 km</small></button><button class="checkpoint" data-spot="0.44">💧 <span>Waterfall</span><small>1.3 km</small></button><button class="checkpoint" data-spot="0.62">⛰️ <span>Hill Climb</span><small>1.9 km</small></button><button class="checkpoint" data-spot="0.83">🌲 <span>Forest Trail</span><small>2.5 km</small></button></div></section>
+  <footer class="controls">
+    <div class="control-left"><span class="subtle-label">VIRTUAL PACE</span><div class="speed-controls"><button id="minus" aria-label="Decrease simulated speed">−</button><div class="speed-display"><b id="controlSpeed">5.0</b><small>km/h</small></div><button id="plus" aria-label="Increase simulated speed">+</button></div><input type="range" id="paceSlider" min="1" max="16" step="0.1" value="5" aria-label="Virtual pace km/h"></div>
+    <div class="control-center"><button class="mainbutton" id="playPause"><span id="playIcon">Ⅱ</span><span id="playLabel">Pause Walk</span></button><button class="resetbutton" id="resetBtn">↻ Reset</button></div>
+    <div class="control-right"><span class="subtle-label">CAMERA VIEW</span><div class="view-toggle"><button class="selected" id="thirdView">Person</button><button id="firstView">First Person</button></div><p>Real 3D route · No treadmill motor commands</p></div>
+  </footer>
+  <div class="tip" id="tip">Walk, jog, or run through a changing 3 km park. This is a simulation, not a live treadmill reading.</div>
+  <div class="disclaimer">Visual simulation only • Virtual pace controls do not control your ProForm treadmill</div>
+  <div id="fatal" hidden><b>Unable to load the 3D world</b><p id="fatalReason">Please open this page online in Chrome with WebGL enabled.</p></div>
+</div>
+<script>
+  setTimeout(function () {
+    if (!window.__parkReady) {
+      document.getElementById('loadTitle').textContent = '3D engine did not load';
+      document.getElementById('loadDesc').textContent = 'The 3D engine did not start.';
+      window.__parkFail('The 3D engine did not start in time.');
+    }
+  }, 20000);
+</script>
+<script type="module" src="app.js" onerror="window.__parkFail('The 3D engine files could not be loaded.')"></script>
+</body>
+</html>
