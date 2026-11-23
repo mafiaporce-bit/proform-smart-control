@@ -27,7 +27,17 @@ export const COACH_LINES: Record<string, string> = {
   half: "Halfway there. Don't stop now!",
   last: "Last stretch. Empty the tank!",
   finish: "Yes! That's how you finish. Great work!",
+  safety: "Clip on your safety key first. Safety, then speed!",
+  paused: "Timer paused. Catch your breath.",
+  resumed: "And we're back. Let's go!",
+  warn: "Change coming up in ten seconds. Get ready!",
+  goal: "Goal time reached. You did it!",
+  plandone: "Plan complete! Slow it down and stop the belt on the console.",
+  saved: "Workout saved. Remember to stop the belt on the console.",
 };
+
+/** Words of the speed line, e.g. "Set it to 5.5 kilometres per hour!" (same as the server). */
+export const speedText = (kmh: number) => `Set it to ${kmh.toFixed(1)} kilometres per hour!`;
 
 let audio: HTMLAudioElement | null = null;
 const player = () => (audio ??= typeof Audio === 'undefined' ? null : new Audio());
@@ -44,8 +54,8 @@ export async function coachVoiceAvailable(): Promise<boolean> {
 }
 export function resetCoachVoiceProbe() { known = null; }
 
-async function clip(key: string): Promise<Blob | null> {
-  const req = `${FN}?line=${encodeURIComponent(key)}`;
+async function clip(key: string, kmh?: number): Promise<Blob | null> {
+  const req = `${FN}?line=${encodeURIComponent(key)}${kmh !== undefined ? `&kmh=${kmh.toFixed(1)}` : ''}`;
   try {
     if ('caches' in window) {
       const c = await caches.open(CACHE);
@@ -65,26 +75,65 @@ async function clip(key: string): Promise<Blob | null> {
   }
 }
 
-/**
- * Says one coach line. `key` is one of COACH_LINES. With Charlie off, or on any failure, the
- * normal voice speaks the same words. Never throws.
- */
-export async function coachSay(key: string): Promise<void> {
-  const text = COACH_LINES[key] ?? key;
+// Lines play one after another (a speed change is often "Pick it up!" then "Set it to 5.0"),
+// so a new line never cuts off the one before it.
+let chain: Promise<void> = Promise.resolve();
+let queued = 0;
+let generation = 0;
+
+function playBlob(el: HTMLAudioElement, blob: Blob): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const done = (ok: boolean) => {
+      clearTimeout(guard);
+      el.onended = el.onerror = null;
+      URL.revokeObjectURL(url);
+      ok ? resolve() : reject(new Error('play failed'));
+    };
+    const guard = setTimeout(() => done(true), 15_000); // never let one clip block the queue
+    el.onended = () => done(true);
+    el.onerror = () => done(false);
+    el.src = url;
+    el.play().catch(() => done(false));
+  });
+}
+
+async function playOne(key: string, kmh: number | undefined, gen: number, force: boolean): Promise<void> {
+  if (gen !== generation) return; // stopped since this was queued
   const s = getSettings();
-  if (!s.voiceOn) return;
-  if (s.coachVoice !== 'charlie') return void speak(text);
+  if (!s.voiceOn && !force) return;
+  const text = key === 'set' && kmh !== undefined ? speedText(kmh) : COACH_LINES[key] ?? key;
+  if (s.coachVoice !== 'charlie') return speak(text, force);
   const el = player();
-  if (!el || !(await coachVoiceAvailable())) return void speak(text);
-  const blob = await clip(key);
-  if (!blob) return void speak(text);
+  // The normal voice is only a fallback for when Charlie cannot play at all,
+  // so the safety reminders are never silent.
+  if (!el || !(await coachVoiceAvailable())) return speak(text, force);
+  const blob = await clip(key, kmh);
+  if (!blob) return speak(text, force);
   try {
-    el.src = URL.createObjectURL(blob);
-    el.onended = el.onerror = () => { if (el.src.startsWith('blob:')) URL.revokeObjectURL(el.src); };
-    await el.play();
+    await playBlob(el, blob);
   } catch {
-    void speak(text); // autoplay blocked or decode error
+    await speak(text, force); // autoplay blocked or decode error
   }
+}
+
+/**
+ * Says one coach line (a key of COACH_LINES, or 'set' with a speed). With Charlie off, or when
+ * Charlie cannot play, the normal voice says the same words. `force` speaks even with voice
+ * guidance off (used only for the safety-key reminder, as before). Never throws.
+ */
+export function coachSay(key: string, kmh?: number, force = false): Promise<void> {
+  if (queued >= 4) return Promise.resolve(); // never build a backlog of stale lines
+  queued++;
+  const gen = generation;
+  chain = chain.then(() => playOne(key, kmh, gen, force)).catch(() => {}).finally(() => { queued--; });
+  return chain;
+}
+
+/** Stops Charlie now and drops anything waiting (used when the voice is switched off). */
+export function stopCoach() {
+  generation++;
+  try { audio?.pause(); } catch { /* ignore */ }
 }
 
 /** Rotates the four "push harder" lines so they don't repeat back to back. */

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '../components/icons';
 import { Card, Footer, PageHeader, Toggle } from '../components/ui';
 import { setSettings, useSettings } from '../lib/settings';
-import { coachSay, coachVoiceAvailable, resetCoachVoiceProbe } from '../lib/coachvoice';
+import { coachSay, coachVoiceAvailable, resetCoachVoiceProbe, stopCoach } from '../lib/coachvoice';
 import { DASH_STYLES, StylePicker } from '../components/Dashboard';
 import { KOKORO_VOICES, kokoroFailReason, loadKokoro, speak, stopSpeaking, useKokoroStatus } from '../lib/voice';
 import { isInstalled, promptInstall, useCanInstall } from '../lib/install';
@@ -82,7 +82,7 @@ export function SettingsPage() {
 
         <Card>
           <div className="label">Voice</div>
-          <Toggle on={s.voiceOn} onChange={(v) => { setSettings({ voiceOn: v }); if (!v) stopSpeaking(); }} label="Voice guidance" hint="Spoken start, pause and finish messages" />
+          <Toggle on={s.voiceOn} onChange={(v) => { setSettings({ voiceOn: v }); if (!v) { stopSpeaking(); stopCoach(); } }} label="Voice guidance" hint="Spoken start, pause and finish messages" />
           <Toggle on={s.kmAnnounce} onChange={(v) => setSettings({ kmAnnounce: v })} label="Announce every kilometre" />
           <Toggle on={s.cheer} onChange={(v) => setSettings({ cheer: v })} label="Encouragement" hint="A short spoken boost every 5 minutes" />
 
@@ -163,6 +163,12 @@ export function SettingsPage() {
             ))}
           </div>
 
+          {s.coachVoice === 'charlie' && !s.voiceOn && (
+            <div className="mt-3 rounded-xl border border-warn/40 bg-warn/[0.08] p-3 text-[13px] text-[#ffe9b0]" role="alert">
+              Voice guidance is off, so Charlie stays silent.
+              <button className="btn btn-sm mt-2 w-full" onClick={() => setSettings({ voiceOn: true })}>Turn on voice guidance</button>
+            </div>
+          )}
           {s.coachVoice === 'charlie' && (
             <>
               <p className="mt-2 flex items-start gap-2 text-[12.5px] text-mute" role="status">
@@ -175,7 +181,7 @@ export function SettingsPage() {
                       ? 'Charlie is not set up on this site yet, so the standard voice is used. It needs the ELEVENLABS_API_KEY on Netlify and a GitHub or CLI deploy (drag-and-drop does not include functions).'
                       : ''}
               </p>
-              <button className="btn btn-primary mt-3 w-full" onClick={() => void coachSay('push1')}>
+              <button className="btn btn-primary mt-3 w-full" onClick={() => { if (!s.voiceOn) setSettings({ voiceOn: true }); void coachSay('push1'); }}>
                 <Icon name="volume" size={18} /> Test Charlie
               </button>
             </>

@@ -10,7 +10,7 @@ import { currentBpm } from './hr';
 import { planTotalSec, type Plan, type PlanSegment } from './programs';
 import { getSettings } from './settings';
 import { speak } from './voice';
-import { COACH_LINES, coachSay, pushLine } from './coachvoice';
+import { COACH_LINES, coachSay, pushLine, speedText } from './coachvoice';
 import { clearCoachLine, showCoachLine } from './coachline';
 
 export interface WorkoutState {
@@ -159,12 +159,29 @@ export function setMeasuredSpeed(kmh: number | null) {
 }
 export const getMeasuredSpeed = () => measured;
 
+/**
+ * Speaks one workout moment. With Charlie on: his line for `key` (plus "Set it to X" when a speed
+ * is given), so the normal voice is not used. Otherwise the normal sentence, exactly as before.
+ * Either way the words are shown as the dashboard caption.
+ */
+function say(text: string, key: string | null, kmh: number | null = null) {
+  if (key && getSettings().coachVoice === 'charlie') {
+    showCoachLine([COACH_LINES[key] ?? text, kmh !== null ? speedText(kmh) : ''].filter(Boolean).join(' '));
+    void coachSay(key);
+    if (kmh !== null) void coachSay('set', kmh);
+  } else {
+    showCoachLine(text);
+    void speak(text);
+  }
+}
+
 function advance(dt: number) {
   const s = state;
   const weight = getSettings().weightKg;
   let { activeMs, distanceKm, kcal, speedKmh, segIndex, planDone, maxKmh, samples, measuredMs } = s;
   let cue: string | null = null;
   let cueKey: string | null = null; // when set and Charlie is on, play this trainer line instead of speaking `cue`
+  let cueKmh: number | null = null; // and then "Set it to X"
   let left = dt;
 
   while (left > 0) {
@@ -195,9 +212,11 @@ function advance(dt: number) {
         cue = segmentCue(seg);
         const prevKmh = s.plan.segments[segIndex - 1]?.kmh ?? seg.kmh;
         cueKey = seg.kmh > prevKmh + 0.05 ? 'speedup' : seg.kmh < prevKmh - 0.05 ? 'easedown' : 'steady';
+        cueKmh = seg.kmh;
       } else {
         planDone = true;
         cue = 'Plan complete. Slow down, then stop the belt on the console when you are ready.';
+        cueKey = 'plandone';
       }
     }
   }
@@ -209,10 +228,11 @@ function advance(dt: number) {
   // One spoken line at most per tick. A speed change always wins.
   const said = [...s.said];
   const once = (key: string, line: string, ck?: string) => {
-    if (cue || said.includes(key)) return;
+    if (cue || said.includes(key)) return false;
     said.push(key);
     cue = line;
     if (ck) cueKey = ck;
+    return true;
   };
   const sec = activeMs / 1000;
   const settings = getSettings();
@@ -225,13 +245,13 @@ function advance(dt: number) {
     const next = s.plan.segments[segIndex + 1];
     const remain = segEndSec(s.plan, segIndex) - sec;
     if (next && seg.sec >= 30 && remain <= 10 && remain > 3) {
-      once(`warn-${segIndex}`, `In ten seconds, ${next.label.toLowerCase()} at ${spokenSpeed(next.kmh)}.`);
+      if (once(`warn-${segIndex}`, `In ten seconds, ${next.label.toLowerCase()} at ${spokenSpeed(next.kmh)}.`, 'warn')) cueKmh = next.kmh;
     }
   }
   if (s.targetMin) {
     const goal = s.targetMin * 60;
     if (sec >= goal / 2 && sec < goal / 2 + 30) once('half', 'Halfway there.', 'half');
-    if (!s.plan && sec >= goal) once('goal', 'Goal time reached. Well done.');
+    if (!s.plan && sec >= goal) once('goal', 'Goal time reached. Well done.', 'goal');
   }
   if (settings.cheer) {
     const five = Math.floor(sec / 300);
@@ -239,11 +259,7 @@ function advance(dt: number) {
   }
 
   set({ activeMs, distanceKm, kcal, speedKmh, segIndex, planDone, maxKmh, samples, measuredMs, said, ...hr });
-  if (cue) {
-    const charlie = Boolean(cueKey) && getSettings().coachVoice === 'charlie';
-    showCoachLine(charlie ? COACH_LINES[cueKey as string] ?? cue : cue);
-    if (charlie) void coachSay(cueKey as string); else void speak(cue);
-  }
+  if (cue) say(cue, cueKey, cueKmh);
 }
 
 function tick() {
@@ -288,8 +304,12 @@ export function startWorkout(opts: { targetMin?: number | null; plan?: Plan | nu
       ? `Starting ${opts.virtual}. Clip on your safety key and start the belt on the console.`
       : 'Workout started. Clip on your safety key.';
   if (getSettings().coachVoice === 'charlie') {
-    showCoachLine(COACH_LINES.start);
-    void speak('Clip on your safety key.', true); void coachSay('start');
+    // Charlie only: the safety reminder (always spoken, as before), the start line, then the first speed.
+    const first = plan ? plan.segments[0].kmh : null;
+    showCoachLine([COACH_LINES.start, COACH_LINES.safety, first !== null ? speedText(first) : ''].filter(Boolean).join(' '));
+    void coachSay('safety', undefined, true);
+    void coachSay('start');
+    if (first !== null) void coachSay('set', first);
   } else {
     showCoachLine(startLine);
     void speak(startLine);
@@ -301,7 +321,7 @@ export function pauseWorkout() {
   tick();
   set({ status: 'paused', lastTick: null }, true);
   runTimer(false);
-  void speak('Timer paused.');
+  say('Timer paused.', 'paused');
 }
 
 export function resumeWorkout() {
@@ -309,7 +329,7 @@ export function resumeWorkout() {
   set({ status: 'running', lastTick: Date.now() }, true);
   runTimer(true);
   void holdScreen(true);
-  void speak('Timer resumed.');
+  say('Timer resumed.', 'resumed');
 }
 
 export function setLoggedSpeed(kmh: number) {
@@ -365,8 +385,12 @@ export async function finishWorkout(): Promise<Workout | null> {
       ...(state.hrMs >= 10_000 ? { avgHr: Math.round(state.hrSum / state.hrMs), maxHr: state.hrMax } : {}),
     };
     saved.id = await addWorkout(saved);
-    if (getSettings().coachVoice === 'charlie') void coachSay('finish');
-    void speak(`Workout saved. ${saved.distanceKm.toFixed(2)} kilometres in ${Math.round(durationSec / 60)} minutes. Remember to stop the belt on the console.`);
+    if (getSettings().coachVoice === 'charlie') {
+      void coachSay('finish');
+      void coachSay('saved');
+    } else {
+      void speak(`Workout saved. ${saved.distanceKm.toFixed(2)} kilometres in ${Math.round(durationSec / 60)} minutes. Remember to stop the belt on the console.`);
+    }
   }
   reset();
   return saved;

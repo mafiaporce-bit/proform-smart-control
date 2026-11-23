@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { WorkoutDashboard } from '../components/Dashboard';
 import { useTreadmillSpeed } from '../ble/telemetry';
 import { stopSpeaking } from '../lib/voice';
+import { stopCoach } from '../lib/coachvoice';
 import { Icon } from '../components/icons';
 import { Card, PageHeader, SafetyNote, Stat, StatusPill, go } from '../components/ui';
 import {
@@ -226,7 +227,7 @@ export function WorkoutPage() {
         <button
           className={`btn w-full ${settings.voiceOn ? '!border-cyan/60 text-cyan' : 'text-mute'}`}
           aria-pressed={settings.voiceOn}
-          onClick={() => { setSettings({ voiceOn: !settings.voiceOn }); if (settings.voiceOn) stopSpeaking(); }}
+          onClick={() => { setSettings({ voiceOn: !settings.voiceOn }); if (settings.voiceOn) { stopSpeaking(); stopCoach(); } }}
         >
           <Icon name={settings.voiceOn ? 'volume' : 'mute'} size={18} /> Coach voice {settings.voiceOn ? 'on' : 'off'}
         </button>

@@ -31,7 +31,7 @@ export const STATUS_GROUPS: Array<{ title: string; tone: string; items: string[]
       'Heart-rate strap over standard Bluetooth (listen-only)',
       'Kokoro voice (needs internet the first time to download the voice)',
       'Optional AI chat through a Netlify Function (needs a GitHub deploy and an API key)',
-      'Charlie trainer voice (a real human-sounding coach via ElevenLabs): plays push, pace and milestone lines during a run. Needs the ELEVENLABS_API_KEY on Netlify and a GitHub or CLI deploy; falls back to the standard voice if it is not set up. Each line is saved after the first play so it works offline',
+      'Charlie trainer voice (a real human-sounding coach via ElevenLabs): speaks every workout moment (safety key, start, target speed, speed changes, pause, milestones, finish). Needs the ELEVENLABS_API_KEY on Netlify and a GitHub or CLI deploy; falls back to the standard voice if it is not set up. Each line is saved after the first play so it works offline',
     ],
   },
   {

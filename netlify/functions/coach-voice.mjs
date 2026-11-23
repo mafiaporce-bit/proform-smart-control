@@ -26,7 +26,23 @@ const LINES = {
   half: "Halfway there. Don't stop now!",
   last: "Last stretch. Empty the tank!",
   finish: "Yes! That's how you finish. Great work!",
+  safety: "Clip on your safety key first. Safety, then speed!",
+  paused: "Timer paused. Catch your breath.",
+  resumed: "And we're back. Let's go!",
+  warn: "Change coming up in ten seconds. Get ready!",
+  goal: "Goal time reached. You did it!",
+  plandone: "Plan complete! Slow it down and stop the belt on the console.",
+  saved: "Workout saved. Remember to stop the belt on the console.",
 };
+
+// The one line with a number in it: "Set it to 5.5 kilometres per hour!" The number must be a
+// plain speed between 0.5 and 20 with at most one decimal, so nothing else can be spoken.
+function speedLine(raw) {
+  if (!/^\d{1,2}(\.\d)?$/.test(raw)) return null;
+  const v = Number(raw);
+  if (!(v >= 0.5 && v <= 20)) return null;
+  return `Set it to ${v.toFixed(1)} kilometres per hour!`;
+}
 
 export default async (req) => {
   const key = process.env.ELEVENLABS_API_KEY;
@@ -35,12 +51,12 @@ export default async (req) => {
 
   // Availability probe for the app.
   if (url.searchParams.get('probe')) {
-    return new Response(JSON.stringify({ ok: Boolean(key), lines: Object.keys(LINES) }), {
+    return new Response(JSON.stringify({ ok: Boolean(key), lines: [...Object.keys(LINES), 'set'] }), {
       status: 200, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
     });
   }
   if (!key) return new Response('Coach voice not set up', { status: 503 });
-  const text = LINES[line];
+  const text = line === 'set' ? speedLine(String(url.searchParams.get('kmh') || '')) : LINES[line];
   if (!text) return new Response('Unknown line', { status: 404 });
 
   try {
